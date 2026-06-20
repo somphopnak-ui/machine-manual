@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>คู่มือใช้งานเครื่องบรรจุซองอัตโนมัติ</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Machine Manual</p>
+        <h1>คู่มือใช้งานเครื่องบรรจุซองอัตโนมัติ</h1>
+        <p class="subtitle">ดูขั้นตอนการใช้งาน ตั้งค่าก่อนผลิต Checklist และวิธีแก้ปัญหาได้จากหน้าเดียว</p>
+      </div>
+      <label class="search">
+        <span>ค้นหา</span>
+        <input id="searchInput" type="search" placeholder="เช่น Heater, ฟิล์ม, RUN, ระบบลม" autocomplete="off" />
+      </label>
+    </header>
+
+    <main class="layout">
+      <aside class="sidebar">
+        <nav id="nav"></nav>
+      </aside>
+
+      <section class="content">
+        <div id="quickActions" class="quick-actions"></div>
+        <div id="resultsMeta" class="results-meta"></div>
+        <div id="manualContent"></div>
+      </section>
+    </main>
+
+    <dialog id="imageDialog" class="image-dialog">
+      <button class="dialog-close" type="button" aria-label="ปิดรูป">×</button>
+      <img alt="" />
+      <p></p>
+    </dialog>
+
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
