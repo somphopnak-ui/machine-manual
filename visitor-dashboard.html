@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Visitor Registration Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #172033;
+      --muted: #637083;
+      --line: #dfe5ee;
+      --paper: #f6f8fb;
+      --panel: #ffffff;
+      --blue: #2364aa;
+      --teal: #2a9d8f;
+      --coral: #e76f51;
+      --amber: #f2b84b;
+      font-family: "Prompt", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.72), rgba(246,248,251,.94)),
+        radial-gradient(circle at 12% 8%, rgba(42,157,143,.18), transparent 30%),
+        radial-gradient(circle at 86% 16%, rgba(231,111,81,.15), transparent 28%),
+        var(--paper);
+    }
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 36px; }
+    header {
+      display: grid;
+      grid-template-columns: 1.35fr .65fr;
+      gap: 20px;
+      align-items: end;
+      padding: 22px 0 20px;
+      border-bottom: 1px solid rgba(23,32,51,.12);
+    }
+    h1 { margin: 0; font-size: clamp(30px, 5vw, 58px); line-height: .95; letter-spacing: 0; }
+    .subtitle { margin: 14px 0 0; color: var(--muted); font-size: 16px; line-height: 1.55; max-width: 720px; }
+    .stamp { justify-self: end; color: var(--muted); text-align: right; font-size: 13px; line-height: 1.5; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 22px 0; }
+    .stat, .panel {
+      background: rgba(255,255,255,.88);
+      border: 1px solid rgba(32,45,70,.12);
+      box-shadow: 0 18px 55px rgba(39,55,83,.09);
+      border-radius: 8px;
+    }
+    .stat { padding: 18px; min-height: 118px; display: flex; flex-direction: column; justify-content: space-between; }
+    .stat span { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .08em; }
+    .stat strong { font-size: 38px; line-height: 1; letter-spacing: 0; }
+    .stat b { color: var(--muted); font-size: 13px; font-weight: 600; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .panel { padding: 20px; overflow: hidden; }
+    .panel h2 { margin: 0 0 16px; font-size: 20px; letter-spacing: 0; }
+    .bar-row { display: grid; grid-template-columns: 1fr 58px; gap: 8px 14px; align-items: center; margin: 0 0 13px; }
+    .bar-meta { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; font-size: 14px; }
+    .bar-meta span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .track { height: 11px; background: #edf1f6; border-radius: 999px; overflow: hidden; }
+    .track span { display: block; width: var(--bar); height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--color), color-mix(in srgb, var(--color), white 28%)); }
+    .bar-note { color: var(--muted); font-size: 12px; text-align: right; }
+    .split { display: grid; grid-template-columns: 280px 1fr; gap: 18px; margin-top: 18px; }
+    .donut-wrap { display: grid; place-items: center; min-height: 270px; }
+    .donut {
+      width: min(240px, 80vw);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: var(--donut);
+      position: relative;
+      box-shadow: inset 0 0 0 1px rgba(23,32,51,.1), 0 20px 35px rgba(23,32,51,.08);
+    }
+    .donut::after {
+      content: "";
+      position: absolute;
+      inset: 27%;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: inset 0 0 0 1px rgba(23,32,51,.08);
+    }
+    .legend { list-style: none; padding: 0; margin: 0; display: grid; gap: 9px; align-content: start; }
+    .legend li { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; align-items: center; gap: 10px; font-size: 13px; }
+    .legend li::before { content: ""; width: 12px; height: 12px; border-radius: 3px; background: var(--chip); }
+    .legend span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .matrix { grid-column: 1 / -1; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; min-width: 820px; background: #fff; }
+    th, td { padding: 11px 12px; border-bottom: 1px solid var(--line); text-align: center; font-size: 13px; }
+    thead th { background: #f1f5f9; color: #334155; font-weight: 750; }
+    tbody th { text-align: left; color: #334155; white-space: nowrap; }
+    td { background: color-mix(in srgb, var(--teal) calc(var(--shade) * 74%), white); font-weight: 750; color: #173046; }
+    tr:last-child th, tr:last-child td { border-bottom: 0; }
+    .foot { margin-top: 18px; color: var(--muted); font-size: 12px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    @media (max-width: 860px) {
+      header, .grid, .split, .stats { grid-template-columns: 1fr; }
+      .stamp { justify-self: start; text-align: left; }
+      .stat { min-height: 104px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <h1>Visitor Registration Dashboard</h1>
+        <p class="subtitle">Business card registration overview by Country and Expertise from Visitor Registration.xlsx. Data has been collected from 8 Feb 2026 to present.</p>
+      </div>
+      <div class="stamp">Data period: 8 Feb 2026 to present<br>Generated: 01/07/2026, 18:42:26<br>Source rows: 331</div>
+    </header>
+
+    <section class="stats" aria-label="summary">
+      <div class="stat"><span>Total visitors</span><strong>331</strong><b>records</b></div>
+      <div class="stat"><span>Countries</span><strong>44</strong><b>top: Thailand</b></div>
+      <div class="stat"><span>Expertise</span><strong>53</strong><b>top: Agriculture/Fishing/Forestry</b></div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Top Countries</h2>
+        
+    <div class="bar-row" style="--bar:100.00%; --color:#2364aa">
+      <div class="bar-meta">
+        <span title="Thailand">Thailand</span>
+        <strong>99</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">29.9%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:42.42%; --color:#2a9d8f">
+      <div class="bar-meta">
+        <span title="Japan">Japan</span>
+        <strong>42</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">12.7%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:25.25%; --color:#e76f51">
+      <div class="bar-meta">
+        <span title="France">France</span>
+        <strong>25</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">7.6%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:21.21%; --color:#f2b84b">
+      <div class="bar-meta">
+        <span title="China">China</span>
+        <strong>21</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">6.3%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:14.14%; --color:#7b61ff">
+      <div class="bar-meta">
+        <span title="Indonesia">Indonesia</span>
+        <strong>14</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">4.2%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:13.13%; --color:#d45087">
+      <div class="bar-meta">
+        <span title="South Korea">South Korea</span>
+        <strong>13</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">3.9%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:11.11%; --color:#00a6a6">
+      <div class="bar-meta">
+        <span title="Australia">Australia</span>
+        <strong>11</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">3.3%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:11.11%; --color:#5c677d">
+      <div class="bar-meta">
+        <span title="Malaysia">Malaysia</span>
+        <strong>11</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">3.3%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:10.10%; --color:#2364aa">
+      <div class="bar-meta">
+        <span title="India">India</span>
+        <strong>10</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">3.0%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:9.09%; --color:#2a9d8f">
+      <div class="bar-meta">
+        <span title="Singapore">Singapore</span>
+        <strong>9</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">2.7%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:7.07%; --color:#e76f51">
+      <div class="bar-meta">
+        <span title="United States">United States</span>
+        <strong>7</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">2.1%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:6.06%; --color:#f2b84b">
+      <div class="bar-meta">
+        <span title="Germany">Germany</span>
+        <strong>6</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">1.8%</div>
+    </div>
+  
+      </div>
+      <div class="panel">
+        <h2>Top Expertise</h2>
+        
+    <div class="bar-row" style="--bar:100.00%; --color:#2364aa">
+      <div class="bar-meta">
+        <span title="Agriculture/Fishing/Forestry">Agriculture/Fishing/Forestry</span>
+        <strong>103</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">31.1%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:49.51%; --color:#2a9d8f">
+      <div class="bar-meta">
+        <span title="R&amp;D/Science">R&amp;D/Science</span>
+        <strong>51</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">15.4%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:45.63%; --color:#e76f51">
+      <div class="bar-meta">
+        <span title="Education">Education</span>
+        <strong>47</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">14.2%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:26.21%; --color:#f2b84b">
+      <div class="bar-meta">
+        <span title="Engineering">Engineering</span>
+        <strong>27</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">8.2%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:9.71%; --color:#7b61ff">
+      <div class="bar-meta">
+        <span title="Finance/Banking">Finance/Banking</span>
+        <strong>10</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">3.0%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:9.71%; --color:#d45087">
+      <div class="bar-meta">
+        <span title="Technology">Technology</span>
+        <strong>10</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">3.0%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:8.74%; --color:#00a6a6">
+      <div class="bar-meta">
+        <span title="Media/Advertising">Media/Advertising</span>
+        <strong>9</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">2.7%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:6.80%; --color:#5c677d">
+      <div class="bar-meta">
+        <span title="Health/Medical">Health/Medical</span>
+        <strong>7</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">2.1%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:4.85%; --color:#2364aa">
+      <div class="bar-meta">
+        <span title="Government/Public Sector">Government/Public Sector</span>
+        <strong>5</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">1.5%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:4.85%; --color:#2a9d8f">
+      <div class="bar-meta">
+        <span title="HR/Recruitment/Training">HR/Recruitment/Training</span>
+        <strong>5</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">1.5%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:3.88%; --color:#e76f51">
+      <div class="bar-meta">
+        <span title="Consulting/Professional Service">Consulting/Professional Service</span>
+        <strong>4</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">1.2%</div>
+    </div>
+  
+    <div class="bar-row" style="--bar:3.88%; --color:#f2b84b">
+      <div class="bar-meta">
+        <span title="Law">Law</span>
+        <strong>4</strong>
+      </div>
+      <div class="track"><span></span></div>
+      <div class="bar-note">1.2%</div>
+    </div>
+  
+      </div>
+      <div class="panel split">
+        <div>
+          <h2>Country Share</h2>
+          <div class="donut-wrap"><div class="donut" style="--donut:conic-gradient(#2364aa 25.00% 54.91%, #2a9d8f 54.91% 67.60%, #e76f51 67.60% 75.15%, #f2b84b 75.15% 81.50%, #7b61ff 81.50% 85.73%, #d45087 85.73% 89.65%, #00a6a6 89.65% 92.98%, #5c677d 92.98% 112.01%)"></div></div>
+        </div>
+        <ul class="legend">
+    <li style="--chip:#2364aa">
+      <span>Thailand</span>
+      <strong>99</strong>
+    </li>
+  
+    <li style="--chip:#2a9d8f">
+      <span>Japan</span>
+      <strong>42</strong>
+    </li>
+  
+    <li style="--chip:#e76f51">
+      <span>France</span>
+      <strong>25</strong>
+    </li>
+  
+    <li style="--chip:#f2b84b">
+      <span>China</span>
+      <strong>21</strong>
+    </li>
+  
+    <li style="--chip:#7b61ff">
+      <span>Indonesia</span>
+      <strong>14</strong>
+    </li>
+  
+    <li style="--chip:#d45087">
+      <span>South Korea</span>
+      <strong>13</strong>
+    </li>
+  
+    <li style="--chip:#00a6a6">
+      <span>Australia</span>
+      <strong>11</strong>
+    </li>
+  <li style="--chip:#94a3b8"><span>Other</span><strong>63</strong></li></ul>
+      </div>
+      <div class="panel split">
+        <div>
+          <h2>Expertise Share</h2>
+          <div class="donut-wrap"><div class="donut" style="--donut:conic-gradient(#2364aa 25.00% 56.12%, #2a9d8f 56.12% 71.53%, #e76f51 71.53% 85.73%, #f2b84b 85.73% 93.88%, #7b61ff 93.88% 96.90%, #d45087 96.90% 99.92%, #00a6a6 99.92% 102.64%, #5c677d 102.64% 117.45%)"></div></div>
+        </div>
+        <ul class="legend">
+    <li style="--chip:#2364aa">
+      <span>Agriculture/Fishing/Forestry</span>
+      <strong>103</strong>
+    </li>
+  
+    <li style="--chip:#2a9d8f">
+      <span>R&amp;D/Science</span>
+      <strong>51</strong>
+    </li>
+  
+    <li style="--chip:#e76f51">
+      <span>Education</span>
+      <strong>47</strong>
+    </li>
+  
+    <li style="--chip:#f2b84b">
+      <span>Engineering</span>
+      <strong>27</strong>
+    </li>
+  
+    <li style="--chip:#7b61ff">
+      <span>Finance/Banking</span>
+      <strong>10</strong>
+    </li>
+  
+    <li style="--chip:#d45087">
+      <span>Technology</span>
+      <strong>10</strong>
+    </li>
+  
+    <li style="--chip:#00a6a6">
+      <span>Media/Advertising</span>
+      <strong>9</strong>
+    </li>
+  <li style="--chip:#94a3b8"><span>Other</span><strong>49</strong></li></ul>
+      </div>
+      <div class="panel matrix">
+        <h2>Country x Expertise</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Country</th>
+                <th>Agriculture/Fishing/Forestry</th><th>R&amp;D/Science</th><th>Education</th><th>Engineering</th><th>Finance/Banking</th><th>Technology</th>
+              </tr>
+            </thead>
+            <tbody>
+    <tr>
+      <th>Thailand</th>
+      <td title="Thailand / Agriculture/Fishing/Forestry: 10" style="--shade:0.385">10</td><td title="Thailand / R&amp;D/Science: 5" style="--shade:0.192">5</td><td title="Thailand / Education: 26" style="--shade:1.000">26</td><td title="Thailand / Engineering: 10" style="--shade:0.385">10</td><td title="Thailand / Finance/Banking: 3" style="--shade:0.115">3</td><td title="Thailand / Technology: 8" style="--shade:0.308">8</td>
+    </tr>
+  
+    <tr>
+      <th>Japan</th>
+      <td title="Japan / Agriculture/Fishing/Forestry: 21" style="--shade:0.808">21</td><td title="Japan / R&amp;D/Science: 5" style="--shade:0.192">5</td><td title="Japan / Education: 6" style="--shade:0.231">6</td><td title="Japan / Engineering: 2" style="--shade:0.080">2</td><td title="Japan / Finance/Banking: 0" style="--shade:0.080"></td><td title="Japan / Technology: 0" style="--shade:0.080"></td>
+    </tr>
+  
+    <tr>
+      <th>France</th>
+      <td title="France / Agriculture/Fishing/Forestry: 11" style="--shade:0.423">11</td><td title="France / R&amp;D/Science: 3" style="--shade:0.115">3</td><td title="France / Education: 0" style="--shade:0.080"></td><td title="France / Engineering: 4" style="--shade:0.154">4</td><td title="France / Finance/Banking: 0" style="--shade:0.080"></td><td title="France / Technology: 0" style="--shade:0.080"></td>
+    </tr>
+  
+    <tr>
+      <th>China</th>
+      <td title="China / Agriculture/Fishing/Forestry: 7" style="--shade:0.269">7</td><td title="China / R&amp;D/Science: 8" style="--shade:0.308">8</td><td title="China / Education: 2" style="--shade:0.080">2</td><td title="China / Engineering: 0" style="--shade:0.080"></td><td title="China / Finance/Banking: 0" style="--shade:0.080"></td><td title="China / Technology: 1" style="--shade:0.080">1</td>
+    </tr>
+  
+    <tr>
+      <th>Indonesia</th>
+      <td title="Indonesia / Agriculture/Fishing/Forestry: 8" style="--shade:0.308">8</td><td title="Indonesia / R&amp;D/Science: 0" style="--shade:0.080"></td><td title="Indonesia / Education: 1" style="--shade:0.080">1</td><td title="Indonesia / Engineering: 1" style="--shade:0.080">1</td><td title="Indonesia / Finance/Banking: 2" style="--shade:0.080">2</td><td title="Indonesia / Technology: 0" style="--shade:0.080"></td>
+    </tr>
+  
+    <tr>
+      <th>South Korea</th>
+      <td title="South Korea / Agriculture/Fishing/Forestry: 4" style="--shade:0.154">4</td><td title="South Korea / R&amp;D/Science: 6" style="--shade:0.231">6</td><td title="South Korea / Education: 0" style="--shade:0.080"></td><td title="South Korea / Engineering: 0" style="--shade:0.080"></td><td title="South Korea / Finance/Banking: 0" style="--shade:0.080"></td><td title="South Korea / Technology: 0" style="--shade:0.080"></td>
+    </tr>
+  
+    <tr>
+      <th>Australia</th>
+      <td title="Australia / Agriculture/Fishing/Forestry: 1" style="--shade:0.080">1</td><td title="Australia / R&amp;D/Science: 9" style="--shade:0.346">9</td><td title="Australia / Education: 0" style="--shade:0.080"></td><td title="Australia / Engineering: 1" style="--shade:0.080">1</td><td title="Australia / Finance/Banking: 0" style="--shade:0.080"></td><td title="Australia / Technology: 0" style="--shade:0.080"></td>
+    </tr>
+  
+    <tr>
+      <th>Malaysia</th>
+      <td title="Malaysia / Agriculture/Fishing/Forestry: 1" style="--shade:0.080">1</td><td title="Malaysia / R&amp;D/Science: 0" style="--shade:0.080"></td><td title="Malaysia / Education: 4" style="--shade:0.154">4</td><td title="Malaysia / Engineering: 0" style="--shade:0.080"></td><td title="Malaysia / Finance/Banking: 3" style="--shade:0.115">3</td><td title="Malaysia / Technology: 1" style="--shade:0.080">1</td>
+    </tr>
+  </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+    <div class="foot"><span>Counts are grouped from Country and Expertise columns only.</span><span>Personal fields are not displayed.</span></div>
+  </main>
+</body>
+</html>
